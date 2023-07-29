@@ -24,7 +24,7 @@ def list_files_in_folder(folder_path):
         print(f"An error occurred: {e}")
         return []
 
-def play_midi(midi_path, output_text):
+def play_midi(midi_path, output_text, slider_value):
     global thread_stop
     def tick2second(tick, ticks_per_beat, tempo):
         """Convert absolute time in ticks to seconds.
@@ -54,11 +54,11 @@ def play_midi(midi_path, output_text):
             if thread_stop:
                 break
             if msg.type == "set_tempo":
-                tempo = msg.tempo
+                tempo = msg.tempo / (slider_value/100)
             if (msg.time > 0):
                 delta = tick2second(msg.time, mid.ticks_per_beat, tempo)
-                time.sleep(delta)
                 total_time += delta
+                time.sleep(delta)
             else:
                 delta = 0
             note_status = msg.dict().get('type')
@@ -97,7 +97,7 @@ def change_text():
     output_text.insert(tk.END, f"Entry value: {entry.get()}\n")
 
     if ".mid" in midi_song:
-        thread = Thread(target = play_midi, args = (midi_song, output_text))
+        thread = Thread(target = play_midi, args = (midi_song, output_text, slider.get()))
         thread.start()
 
 def stop_thread():
@@ -108,11 +108,11 @@ def stop_thread():
 root = tk.Tk()
 root.title("ukuleLED")
 
-# Create a label and button widgets
+# Create a label and start_button widgets
 label = tk.Label(root, text="UkuleLED player")
-button = tk.Button(root, text="Play MIDI", command=change_text)
+start_button = tk.Button(root, text="START", command=change_text)
 
-stop_button = tk.Button(root, text="STOP MIDI", command=stop_thread)
+stop_button = tk.Button(root, text="STOP", command=stop_thread)
 
 # Create a StringVar to store the selected option from the dropdown menu
 selected_var = tk.StringVar(root)
@@ -138,13 +138,13 @@ entry = tk.Entry(root, width=30)  # Adjust the width as needed
 
 # Place the widgets on the window
 label.pack(pady=10)
-slider.pack()
 entry.pack(pady=10)
-button.pack(pady=10)
-stop_button.pack(pady=10)
 dropdown_menu.pack()
+slider.pack()
+scale_mode_checkbox.pack()
+start_button.pack(pady=10)
+stop_button.pack(pady=10)
 # Pack the checkboxes using a loop
-scale_mode_checkbox.pack(anchor=tk.W)
 output_text.pack(pady=10)
 
 # Start the GUI event loop
