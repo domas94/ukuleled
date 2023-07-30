@@ -5,6 +5,28 @@ from mido import MidiFile, MidiFile, merge_tracks
 import os
 from threading import Thread
 
+A4 = 69
+E4 = 64
+G4 = 67
+C4 = 60
+RANGE = 10
+
+class Note:
+    def __init__(self, note):
+        self.note = note
+        self.status = False
+class Wires:
+    def __init__(self):
+
+        self.wire_1 = [i for i in range(A4, A4 + RANGE)] # 69 A4
+        self.wire_2 = [i for i in range(E4, E4 + RANGE)] # 64 E4
+        self.wire_3 = [i for i in range(C4, C4 + RANGE)] # 60 C4
+        self.wire_4 = [i for i in range(G4, G4 + RANGE)] # 67 G4
+        self.wires = [self.wire_1, self.wire_2, self.wire_3, self.wire_4]
+
+wires = Wires()
+note_status = [Note(i) for i in range(C4, A4 + RANGE)] 
+
 thread_stop = False
 
 def list_files_in_folder(folder_path):
@@ -24,6 +46,34 @@ def list_files_in_folder(folder_path):
         print(f"An error occurred: {e}")
         return []
 
+def check_note_on(note_status, midi_note):
+    retval = False
+    for i in note_status:
+        if i.note == midi_note:
+            if i.status == True:
+                retval = True
+                break
+    return retval
+
+def set_note_on(midi_note, wires):
+    for cnt, wire in enumerate(wires.wires):
+        for wire_note in wire:
+            if wire_note == midi_note:
+                return cnt, (midi_note - wire[0])
+
+def set_status_note(note_status, status, midi_note):
+     for i in note_status:
+        if i.note == midi_note:
+            i.status = status
+            break
+               
+
+def set_note_off(midi_note, wires):
+    for cnt, wire in enumerate(wires.wires):
+        if midi_note in wire:
+            return cnt, (midi_note - wire[0])
+
+
 def play_midi(midi_path, output_text, slider_value):
     global thread_stop
     def tick2second(tick, ticks_per_beat, tempo):
@@ -42,6 +92,7 @@ def play_midi(midi_path, output_text, slider_value):
             for msg in track:
                 print(msg)
     
+
     mid = MidiFile(midi_path)
     mid_merge = merge_tracks(mid.tracks)
     print(f"MIDI TYPE: {mid.type}")
@@ -61,13 +112,25 @@ def play_midi(midi_path, output_text, slider_value):
                 time.sleep(delta)
             else:
                 delta = 0
-            note_status = msg.dict().get('type')
-            if note_status == "note_on" or note_status == "note_off":
-                note = msg.bytes()[1]
+            midi_note_status = msg.dict().get('type')
+            if midi_note_status == "note_on" or midi_note_status == "note_off":
+                midi_note = msg.bytes()[1]
                 velocity = msg.bytes()[2]
+                if midi_note_status == "note_on" and velocity > 0:
+                    retval = check_note_on(note_status, midi_note)
+                    if retval == False:
+                        retval = set_note_on(midi_note, wires)
+                        if retval != None:
+                            set_status_note(note_status, True, midi_note)
+                       
+                elif midi_note_status == "note_off" and velocity == 0:
+                    retval = set_note_off(note_status, midi_note, wires)
+                    if retval != None:
+                        set_status_note(note_status, False, midi_note)
+
                 output_text.delete(1.0, tk.END)  # Clear previous output
-                output_text.insert(tk.END, str(note_status)+"\n")
-                output_text.insert(tk.END, f"NOTE: {note}\n")
+                output_text.insert(tk.END, str(midi_note_status)+"\n")
+                output_text.insert(tk.END, f"NOTE: {midi_note}\n")
                 output_text.insert(tk.END, f"VELOCITY:{velocity}\n")
                 output_text.insert(tk.END, f"TIME: {total_time}\n")
             
