@@ -14,14 +14,11 @@ import time
 import socket
 import bluetooth
 
-nearby_devices = bluetooth.discover_devices(duration = 1, lookup_names=True)
-print("Found {} devices.".format(len(nearby_devices)))
 
-for addr, name in nearby_devices:
-    print(f"{addr} - {name}")
 
-client = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-client.connect((addr, 1))        
+
+
+
 
 A4 = 69
 E4 = 64
@@ -150,16 +147,18 @@ def play_midi(midi_path, output_text, slider_value):
                     retval = check_note_on(note_status, midi_note)
                     if retval == False:
                         retval = set_note_on(midi_note, wires)
-                        if retval != None:
-                            client.send(retval.encode("utf-8"))
+                        if retval != None :
                             set_status_note(note_status, True, midi_note)
+                        if retval != None and can_connect:
+                            client.send(retval.encode("utf-8"))
                        
                 elif midi_note_status == "note_off" and velocity == 0:
                     retval = set_note_off(midi_note, wires)
                     
                     if retval != None:
-                        client.send(retval.encode("utf-8"))
                         set_status_note(note_status, False, midi_note)
+                    if retval != None and can_connect:
+                        client.send(retval.encode("utf-8"))
 
                 output_text.delete(1.0, tk.END)  # Clear previous output
                 output_text.insert(tk.END, str(midi_note_status)+"\n")
@@ -231,10 +230,31 @@ output_text = tk.Text(root, height=10, width=30)
 
 # Create an entry
 entry = tk.Entry(root, width=30)  # Adjust the width as needed
+correct_device = "EC:62:60:84:17:DE"
+entry.insert(0, correct_device)
+nearby_devices = bluetooth.discover_devices(duration = 1, lookup_names=True)
+bluetooth_info = tk.Label(root, text = f"Found {len(nearby_devices)} devices.")
+bluetooth_string = ""
+can_connect = False
+can_connect_string = "DISCONNECTED"
+entry.get()
+for addr, name in nearby_devices:
+    bluetooth_string += f"{addr} - {name}\n"
+    if addr == correct_device:
+        can_connect = True
+bluetooth_info_2 = tk.Label(root, text = bluetooth_string)
+client = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+if can_connect:
+    client.connect((correct_device, 1)) 
+    can_connect_string = "CONNECTED"
+bluetooth_info_3 = tk.Label(root, text = can_connect_string)
 
 # Place the widgets on the window
 label.pack(pady=10)
 entry.pack(pady=10)
+bluetooth_info.pack()
+bluetooth_info_2.pack()
+bluetooth_info_3.pack()
 dropdown_menu.pack()
 slider.pack()
 scale_mode_checkbox.pack()
