@@ -26,6 +26,18 @@ G4 = 67
 C4 = 60
 RANGE = 10
 
+
+def exception_info(ex):
+    """ Prints exception details. 
+    """
+    
+    print("Error message:",ex)
+    print("Error type: ",type(ex).__name__)
+    tb = ex.__traceback__
+    while tb is not None:
+        print(str({"filename": tb.tb_frame.f_code.co_filename,"name": tb.tb_frame.f_code.co_name,"lineno": tb.tb_lineno}))
+        tb = tb.tb_next
+
 class Note:
     def __init__(self, note):
         self.note = note
@@ -38,6 +50,11 @@ class Wires:
         self.wire_3 = [i for i in range(C4, C4 + RANGE)] # 60 C4
         self.wire_4 = [i for i in range(G4, G4 + RANGE)] # 67 G4
         self.wires = [self.wire_1, self.wire_2, self.wire_3, self.wire_4]
+        self.wire_status_1 = False
+        self.wire_status_2 = False
+        self.wire_status_3 = False
+        self.wire_status_4 = False
+        self.wire_statuses = [self.wire_status_1, self.wire_status_2, self.wire_status_3, self.wire_status_4]
 
 wires = Wires()
 note_status = [Note(i) for i in range(C4, A4 + RANGE)] 
@@ -74,25 +91,27 @@ def set_note_on(midi_note, wires):
     retval = None
     for row, wire in enumerate(wires.wires):
         for wire_note in wire:
-            if wire_note == midi_note:
+            if wire_note == midi_note and wires.wire_statuses[row] == False:
                 column = 9 - (midi_note - wire[0])
                 if column == 9:
                     key = 51
                 else:
                     key = 49
                 retval = chr(key) + chr(row) + chr(column) + chr(0) + chr(0) + chr(0)
+                wires.wire_statuses[row] = True
                 return retval
 
 def set_note_off(midi_note, wires):
     retval = None
     for row, wire in enumerate(wires.wires):
-        if midi_note in wire:
+        if midi_note in wire and wires.wire_statuses[row] == True:
             column = 9 - (midi_note - wire[0])
             if column == 9:
                 key = 52
             else:
                 key = 48
             retval = chr(key) + chr(row) + chr(column) + chr(0) + chr(0) + chr(0)
+            wires.wire_statuses[row] = False
             return retval
 
 def set_status_note(note_status, status, midi_note):
@@ -169,7 +188,7 @@ def play_midi(midi_path, output_text, slider_value):
     except KeyboardInterrupt:
         print("KEYBOARD INTERRUPT MIDI PLAYING")
     except Exception as ex:
-        print(ex)
+        exception_info(ex)
     print("THREAD STOPPED!")
 
 folder_path_here = './'
