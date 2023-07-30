@@ -1,9 +1,27 @@
+# TKINTER
 import tkinter as tk
 from tkinter import ttk
-import time
+
+# MIDI
 from mido import MidiFile, MidiFile, merge_tracks
+
+# STANDARD LIB
 import os
 from threading import Thread
+import time
+
+# BLUETOTOH
+import socket
+import bluetooth
+
+nearby_devices = bluetooth.discover_devices(duration = 1, lookup_names=True)
+print("Found {} devices.".format(len(nearby_devices)))
+
+for addr, name in nearby_devices:
+    print(f"{addr} - {name}")
+
+client = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
+client.connect((addr, 1))        
 
 A4 = 69
 E4 = 64
@@ -56,23 +74,35 @@ def check_note_on(note_status, midi_note):
     return retval
 
 def set_note_on(midi_note, wires):
-    for cnt, wire in enumerate(wires.wires):
+    retval = None
+    for row, wire in enumerate(wires.wires):
         for wire_note in wire:
             if wire_note == midi_note:
-                return cnt, (midi_note - wire[0])
+                column = 9 - (midi_note - wire[0])
+                if column == 9:
+                    key = 51
+                else:
+                    key = 49
+                retval = chr(key) + chr(row) + chr(column) + chr(0) + chr(0) + chr(0)
+                return retval
+
+def set_note_off(midi_note, wires):
+    retval = None
+    for row, wire in enumerate(wires.wires):
+        if midi_note in wire:
+            column = 9 - (midi_note - wire[0])
+            if column == 9:
+                key = 52
+            else:
+                key = 48
+            retval = chr(key) + chr(row) + chr(column) + chr(0) + chr(0) + chr(0)
+            return retval
 
 def set_status_note(note_status, status, midi_note):
      for i in note_status:
         if i.note == midi_note:
             i.status = status
             break
-               
-
-def set_note_off(midi_note, wires):
-    for cnt, wire in enumerate(wires.wires):
-        if midi_note in wire:
-            return cnt, (midi_note - wire[0])
-
 
 def play_midi(midi_path, output_text, slider_value):
     global thread_stop
@@ -121,11 +151,14 @@ def play_midi(midi_path, output_text, slider_value):
                     if retval == False:
                         retval = set_note_on(midi_note, wires)
                         if retval != None:
+                            client.send(retval.encode("utf-8"))
                             set_status_note(note_status, True, midi_note)
                        
                 elif midi_note_status == "note_off" and velocity == 0:
-                    retval = set_note_off(note_status, midi_note, wires)
+                    retval = set_note_off(midi_note, wires)
+                    
                     if retval != None:
+                        client.send(retval.encode("utf-8"))
                         set_status_note(note_status, False, midi_note)
 
                 output_text.delete(1.0, tk.END)  # Clear previous output
@@ -160,7 +193,7 @@ def change_text():
     output_text.insert(tk.END, f"Entry value: {entry.get()}\n")
 
     if ".mid" in midi_song:
-        thread = Thread(target = play_midi, args = (midi_song, output_text, slider.get()))
+        thread = Thread(target = play_midi, daemon = True, args = (midi_song, output_text, slider.get()))
         thread.start()
 
 def stop_thread():
@@ -213,3 +246,4 @@ output_text.pack(pady=10)
 # Start the GUI event loop
 root.mainloop()
 
+client.close()
