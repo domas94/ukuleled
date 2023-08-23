@@ -46,9 +46,9 @@ class Wires:
     def __init__(self):
 
         self.wire_1 = [i for i in range(A4, A4 + RANGE)] # 69 A4
+        self.wire_4 = [i for i in range(G4, G4 + RANGE)] # 67 G4
         self.wire_2 = [i for i in range(E4, E4 + RANGE)] # 64 E4
         self.wire_3 = [i for i in range(C4, C4 + RANGE)] # 60 C4
-        self.wire_4 = [i for i in range(G4, G4 + RANGE)] # 67 G4
         self.wires = [self.wire_1, self.wire_2, self.wire_3, self.wire_4]
         self.wire_status_1 = False
         self.wire_status_2 = False
@@ -89,10 +89,11 @@ def check_note_on(note_status, midi_note):
 
 def set_note_on(midi_note, wires):
     retval = None
-    for row, wire in enumerate(wires.wires):
-        for wire_note in wire:
+    ukulele_string_order = [0,3,1,2]
+    for row in ukulele_string_order:
+        for wire_note in wires.wires[row]:
             if wire_note == midi_note and wires.wire_statuses[row] == False:
-                column = 9 - (midi_note - wire[0])
+                column = 9 - (midi_note - wires.wires[row][0])
                 if column == 9:
                     key = 51
                 else:
@@ -103,9 +104,10 @@ def set_note_on(midi_note, wires):
 
 def set_note_off(midi_note, wires):
     retval = None
-    for row, wire in enumerate(wires.wires):
-        if midi_note in wire and wires.wire_statuses[row] == True:
-            column = 9 - (midi_note - wire[0])
+    ukulele_string_order = [0,3,1,2]
+    for row in ukulele_string_order:
+        if midi_note in wires.wires[row]:
+            column = 9 - (midi_note - wires.wires[row][0])
             if column == 9:
                 key = 52
             else:
@@ -175,13 +177,17 @@ def play_midi(midi_path, output_text, slider_value):
                             set_note_status(note_status, True, midi_note)
                         if retval != None and can_connect:
                             client.send(retval.encode("utf-8"))
+                            print(midi_note, "ON")
+                            time.sleep(3)
                        
-                elif midi_note_status == "note_off" and velocity == 0:
+                elif midi_note_status == "note_off":
                     retval = set_note_off(midi_note, wires)
                     if retval != None:
                         set_note_status(note_status, False, midi_note)
                     if retval != None and can_connect:
                         client.send(retval.encode("utf-8"))
+                    print(midi_note, "OFF")
+                    time.sleep(3)
 
                 elif midi_note_status == "note_on" and velocity == 0:
                     retval = set_note_off(midi_note, wires)
@@ -189,6 +195,8 @@ def play_midi(midi_path, output_text, slider_value):
                         set_note_status(note_status, False, midi_note)
                     if retval != None and can_connect:
                         client.send(retval.encode("utf-8"))
+                        print(midi_note, "OFF")
+                        time.sleep(3)
 
                 output_text.delete(1.0, tk.END)  # Clear previous output
                 output_text.insert(tk.END, str(midi_note_status)+"\n")
