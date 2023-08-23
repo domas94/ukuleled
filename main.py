@@ -114,11 +114,16 @@ def set_note_off(midi_note, wires):
             wires.wire_statuses[row] = False
             return retval
 
-def set_status_note(note_status, status, midi_note):
+def set_note_status(note_status, status, midi_note):
      for i in note_status:
         if i.note == midi_note:
             i.status = status
             break
+
+def turn_off_leds():
+    retval = chr(10) + chr(10) + chr(13) + chr(0) + chr(0) + chr(0)
+    client.send(retval.encode("utf-8"))
+    time.sleep(3)
 
 def play_midi(midi_path, output_text, slider_value):
     global thread_stop
@@ -167,15 +172,21 @@ def play_midi(midi_path, output_text, slider_value):
                     if retval == False:
                         retval = set_note_on(midi_note, wires)
                         if retval != None :
-                            set_status_note(note_status, True, midi_note)
+                            set_note_status(note_status, True, midi_note)
                         if retval != None and can_connect:
                             client.send(retval.encode("utf-8"))
                        
                 elif midi_note_status == "note_off" and velocity == 0:
                     retval = set_note_off(midi_note, wires)
-                    
                     if retval != None:
-                        set_status_note(note_status, False, midi_note)
+                        set_note_status(note_status, False, midi_note)
+                    if retval != None and can_connect:
+                        client.send(retval.encode("utf-8"))
+
+                elif midi_note_status == "note_on" and velocity == 0:
+                    retval = set_note_off(midi_note, wires)
+                    if retval != None:
+                        set_note_status(note_status, False, midi_note)
                     if retval != None and can_connect:
                         client.send(retval.encode("utf-8"))
 
@@ -217,6 +228,7 @@ def change_text():
 def stop_thread():
     global thread_stop
     thread_stop = True
+    turn_off_leds()
 
 # Create the main window
 root = tk.Tk()
@@ -249,7 +261,7 @@ output_text = tk.Text(root, height=10, width=30)
 
 # Create an entry
 entry = tk.Entry(root, width=30)  # Adjust the width as needed
-correct_device = "EC:62:60:84:17:DE"
+correct_device = "3C:71:BF:FD:46:02"
 entry.insert(0, correct_device)
 nearby_devices = bluetooth.discover_devices(duration = 1, lookup_names=True)
 bluetooth_info = tk.Label(root, text = f"Found {len(nearby_devices)} devices.")
