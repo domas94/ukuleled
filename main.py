@@ -14,11 +14,23 @@ import time
 import socket
 import bluetooth
 
+WHOLE_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F',
+               'F#', 'G', 'G#', 'A', 'A#', 'B'] * 3
 
-
-
-
-
+SCALES = \
+    {
+        "major": [0, 2, 4, 5, 7, 9, 11],
+        "minor": [0, 2, 3, 5, 7, 10, 11],
+        "dorian": [0, 2, 3, 5, 7, 9, 10],
+        "phrygian": [0, 1, 3, 5, 7, 8, 10],
+        "minor_pentatonic": [0, 3, 5, 7, 10],
+        "major_pentatonic": [0, 2, 4, 7, 9],
+        "harmonic_minor": [0, 2, 3, 5, 7, 8, 10],
+        "mixolydian": [0, 2, 4, 5, 7, 9, 10],
+        "minor_blues": [0, 3, 5, 6, 7, 10],
+        "locrian": [0, 1, 3, 5, 6, 8, 10],
+        "lydian": [0, 2, 4, 6, 7, 9, 11],
+    }
 
 A4 = 69
 E4 = 64
@@ -26,6 +38,41 @@ G4 = 67
 C4 = 60
 RANGE = 10
 
+
+STRINGS = {i: 0 for i in 'GCEA'}
+for i in STRINGS.keys():
+    # finding the index of first note in the string
+    start = WHOLE_NOTES.index(i)
+    # taking a slice of 20 elements
+    STRINGS[i] = WHOLE_NOTES[start:start + 20]
+
+
+def get_scale_notes(key, intervals, whole_notes):
+    # finding start of slice
+    root = whole_notes.index(key)
+    # taking 12 consecutive elements
+    octave = whole_notes[root:root + 12]
+    # accesing indexes specified by `intervals` to retrieve notes
+    return [octave[i] for i in intervals]
+
+
+def find_notes(scale, strings):
+    notes_strings = {i: 0 for i in "GCEA"}
+    # for every string
+    for key in strings.keys():
+        # we create an empty list of indexes
+        indexes = []
+
+        for note in scale:
+            # append index where note of the scale is found in
+            ind = strings[key].index(note)
+            indexes.append(ind)
+            # because there are 20 frets, there are duplicate notes in the string
+            if ind <= 7:
+                # we must also append these to indexes
+                indexes.append(ind + 12)
+        notes_strings[key] = indexes
+    return notes_strings
 
 def exception_info(ex):
     """ Prints exception details. 
@@ -214,7 +261,7 @@ if files_in_folder:
 else:
     print("No files found in the folder.")
 
-def change_text():
+def play_start():
     midi_song = selected_var.get()
 
     output_text.delete(1.0, tk.END)  # Clear previous output
@@ -223,7 +270,21 @@ def change_text():
     output_text.insert(tk.END, f"Slider value: {slider.get()}\n")
     output_text.insert(tk.END, f"Entry value: {entry.get()}\n")
 
-    if ".mid" in midi_song:
+    if scale_mode_state.get():
+        for i in scale_note_position["G"]:
+            retval = chr(49) + chr(3) + chr(i) + chr(0) + chr(0) + chr(0)
+            client.send(retval.encode("utf-8"))
+        for i in scale_note_position["C"]:
+            retval = chr(49) + chr(2) + chr(i) + chr(0) + chr(0) + chr(0)
+            client.send(retval.encode("utf-8"))
+        for i in scale_note_position["E"]:
+            retval = chr(49) + chr(1) + chr(i) + chr(0) + chr(0) + chr(0)
+            client.send(retval.encode("utf-8"))
+        for i in scale_note_position["A"]:
+            retval = chr(49) + chr(0) + chr(i) + chr(0) + chr(0) + chr(0)
+            client.send(retval.encode("utf-8"))
+
+    elif ".mid" in midi_song:
         thread = Thread(target = play_midi, daemon = True, args = (midi_song, output_text, slider.get()))
         thread.start()
 
@@ -232,13 +293,17 @@ def stop_thread():
     thread_stop = True
     turn_off_leds()
 
+
+scale = get_scale_notes("C", SCALES["major"], WHOLE_NOTES)
+scale_note_position = find_notes(scale, STRINGS)
+
 # Create the main window
 root = tk.Tk()
 root.title("ukuleLED")
 
 # Create a label and start_button widgets
 label = tk.Label(root, text="UkuleLED player")
-start_button = tk.Button(root, text="START", command=change_text)
+start_button = tk.Button(root, text="START", command=play_start)
 
 stop_button = tk.Button(root, text="STOP", command=stop_thread)
 
@@ -297,6 +362,7 @@ stop_button.pack(pady=10)
 output_text.pack(pady=10)
 
 # Start the GUI event loop
+
 root.mainloop()
 
 client.close()
