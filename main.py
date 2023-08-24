@@ -191,8 +191,6 @@ def play_midi(midi_path, output_text, slider_value):
                         set_note_status(note_status, False, midi_note)
                     if retval != None and can_connect:
                         client.send(retval.encode("utf-8"))
-                        print(midi_note, "OFF")
-                        time.sleep(3)
 
                 output_text.delete(1.0, tk.END)  # Clear previous output
                 output_text.insert(tk.END, str(midi_note_status)+"\n")
