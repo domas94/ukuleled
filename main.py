@@ -177,8 +177,6 @@ def play_midi(midi_path, output_text, slider_value):
                             set_note_status(note_status, True, midi_note)
                         if retval != None and can_connect:
                             client.send(retval.encode("utf-8"))
-                            print(midi_note, "ON")
-                            time.sleep(3)
                        
                 elif midi_note_status == "note_off":
                     retval = set_note_off(midi_note, wires)
@@ -186,8 +184,6 @@ def play_midi(midi_path, output_text, slider_value):
                         set_note_status(note_status, False, midi_note)
                     if retval != None and can_connect:
                         client.send(retval.encode("utf-8"))
-                    print(midi_note, "OFF")
-                    time.sleep(3)
 
                 elif midi_note_status == "note_on" and velocity == 0:
                     retval = set_note_off(midi_note, wires)
