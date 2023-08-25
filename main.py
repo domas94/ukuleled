@@ -68,9 +68,9 @@ def find_notes(scale, strings):
             ind = strings[key].index(note)
             indexes.append(ind)
             # because there are 20 frets, there are duplicate notes in the string
-            if ind <= 7:
-                # we must also append these to indexes
-                indexes.append(ind + 12)
+            # if ind <= 7:
+            #     # we must also append these to indexes
+            #     indexes.append(ind + 12)
         notes_strings[key] = indexes
     return notes_strings
 
@@ -271,18 +271,13 @@ def play_start():
     output_text.insert(tk.END, f"Entry value: {entry.get()}\n")
 
     if scale_mode_state.get():
-        for i in scale_note_position["G"]:
-            retval = chr(49) + chr(3) + chr(i) + chr(0) + chr(0) + chr(0)
-            client.send(retval.encode("utf-8"))
-        for i in scale_note_position["C"]:
-            retval = chr(49) + chr(2) + chr(i) + chr(0) + chr(0) + chr(0)
-            client.send(retval.encode("utf-8"))
-        for i in scale_note_position["E"]:
-            retval = chr(49) + chr(1) + chr(i) + chr(0) + chr(0) + chr(0)
-            client.send(retval.encode("utf-8"))
-        for i in scale_note_position["A"]:
-            retval = chr(49) + chr(0) + chr(i) + chr(0) + chr(0) + chr(0)
-            client.send(retval.encode("utf-8"))
+        for cnt, root in enumerate(STRINGS.keys()):
+            for i in scale_note_position[root]:
+                if i < 9:
+                    i = 9 - i
+                    new_cnt = 3 - cnt
+                    retval = chr(49) + chr(new_cnt) + chr(i) + chr(0) + chr(0) + chr(0)
+                    client.send(retval.encode("utf-8"))
 
     elif ".mid" in midi_song:
         thread = Thread(target = play_midi, daemon = True, args = (midi_song, output_text, slider.get()))
@@ -318,7 +313,7 @@ dropdown_menu = ttk.Combobox(root, textvariable=selected_var, values=midi_list)
 scale_mode_state = tk.IntVar(root)
 
 # Create the checkboxes
-scale_mode_checkbox = tk.Checkbutton(root, text=f"Scale mode", variable = scale_mode_state)
+scale_mode_checkbox = tk.Checkbutton(root, text=f"C major scale mode", variable = scale_mode_state)
 
 # Create a slider
 slider = tk.Scale(root, from_= 50, to = 200, orient=tk.HORIZONTAL)
