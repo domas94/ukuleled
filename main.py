@@ -97,11 +97,11 @@ class Wires:
         self.wire_2 = [i for i in range(E4, E4 + RANGE)] # 64 E4
         self.wire_3 = [i for i in range(C4, C4 + RANGE)] # 60 C4
         self.wires = [self.wire_1, self.wire_2, self.wire_3, self.wire_4]
-        self.wire_status_1 = False
-        self.wire_status_2 = False
-        self.wire_status_3 = False
-        self.wire_status_4 = False
-        self.wire_statuses = [self.wire_status_1, self.wire_status_2, self.wire_status_3, self.wire_status_4]
+        self.wire_1_note = 0
+        self.wire_2_note = 0
+        self.wire_3_note = 0
+        self.wire_4_note = 0
+        self.wire_notes = [self.wire_1_note, self.wire_2_note, self.wire_3_note, self.wire_4_note]
 
 wires = Wires()
 note_status = [Note(i) for i in range(C4, A4 + RANGE)] 
@@ -125,42 +125,31 @@ def list_files_in_folder(folder_path):
         print(f"An error occurred: {e}")
         return []
 
-def check_note_on(note_status, midi_note):
-    retval = False
-    for i in note_status:
-        if i.note == midi_note:
-            if i.status == True:
-                retval = True
-                break
-    return retval
-
 def set_note_on(midi_note, wires):
     retval = None
-    ukulele_string_order = [0,3,1,2]
-    for row in ukulele_string_order:
+    for row in range(0,3):
         for wire_note in wires.wires[row]:
-            if wire_note == midi_note and wires.wire_statuses[row] == False:
+            if wire_note == midi_note and wires.wire_notes[row] == 0:
                 column = 9 - (midi_note - wires.wires[row][0])
                 if column == 9:
                     key = 51
                 else:
                     key = 49
                 retval = chr(key) + chr(row) + chr(column) + chr(0) + chr(0) + chr(0)
-                wires.wire_statuses[row] = True
+                wires.wire_notes[row] = midi_note
                 return retval
 
 def set_note_off(midi_note, wires):
     retval = None
-    ukulele_string_order = [0,3,1,2]
-    for row in ukulele_string_order:
-        if midi_note in wires.wires[row]:
+    for row in range(0,3):
+        if midi_note == wires.wires_notes[row]:
             column = 9 - (midi_note - wires.wires[row][0])
             if column == 9:
                 key = 52
             else:
                 key = 48
             retval = chr(key) + chr(row) + chr(column) + chr(0) + chr(0) + chr(0)
-            wires.wire_statuses[row] = False
+            wires.wire_notes[row] = 0
             return retval
 
 def set_note_status(note_status, status, midi_note):
@@ -217,13 +206,11 @@ def play_midi(midi_path, output_text, slider_value):
                 midi_note = msg.bytes()[1]
                 velocity = msg.bytes()[2]
                 if midi_note_status == "note_on" and velocity > 0:
-                    retval = check_note_on(note_status, midi_note)
-                    if retval == False:
-                        retval = set_note_on(midi_note, wires)
-                        if retval != None :
-                            set_note_status(note_status, True, midi_note)
-                        if retval != None and can_connect:
-                            client.send(retval.encode("utf-8"))
+                    retval = set_note_on(midi_note, wires)
+                    if retval != None :
+                        set_note_status(note_status, True, midi_note)
+                    if retval != None and can_connect:
+                        client.send(retval.encode("utf-8"))
                        
                 elif midi_note_status == "note_off":
                     retval = set_note_off(midi_note, wires)
