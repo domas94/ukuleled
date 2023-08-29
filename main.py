@@ -102,10 +102,16 @@ class Wires:
         self.wire_3_note = 0
         self.wire_4_note = 0
         self.wire_notes = [self.wire_1_note, self.wire_2_note, self.wire_3_note, self.wire_4_note]
+    
+    def reset_values(self):
+        self.wire_1_note = 0
+        self.wire_2_note = 0
+        self.wire_3_note = 0
+        self.wire_4_note = 0
 
 wires = Wires()
 note_status = [Note(i) for i in range(C4, A4 + RANGE)] 
-
+wire_order = [0,3,1,2]
 thread_stop = False
 
 def list_files_in_folder(folder_path):
@@ -127,7 +133,7 @@ def list_files_in_folder(folder_path):
 
 def set_note_on(midi_note, wires):
     retval = None
-    for row in range(0,3):
+    for row in wire_order:
         for wire_note in wires.wires[row]:
             if wire_note == midi_note and wires.wire_notes[row] == 0:
                 column = 9 - (midi_note - wires.wires[row][0])
@@ -141,8 +147,8 @@ def set_note_on(midi_note, wires):
 
 def set_note_off(midi_note, wires):
     retval = None
-    for row in range(0,3):
-        if midi_note == wires.wires_notes[row]:
+    for row in wire_order:
+        if midi_note == wires.wire_notes[row]:
             column = 9 - (midi_note - wires.wires[row][0])
             if column == 9:
                 key = 52
@@ -273,6 +279,7 @@ def play_start():
 def stop_thread():
     global thread_stop
     thread_stop = True
+    wires.reset_values()
     turn_off_leds()
 
 
