@@ -14,39 +14,7 @@ import time
 import socket
 import bluetooth
 
-WHOLE_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F',
-               'F#', 'G', 'G#', 'A', 'A#', 'B'] * 3
-
-SCALES = \
-    {
-        "major": [0, 2, 4, 5, 7, 9, 11],
-        "minor": [0, 2, 3, 5, 7, 10, 11],
-        "dorian": [0, 2, 3, 5, 7, 9, 10],
-        "phrygian": [0, 1, 3, 5, 7, 8, 10],
-        "minor_pentatonic": [0, 3, 5, 7, 10],
-        "major_pentatonic": [0, 2, 4, 7, 9],
-        "harmonic_minor": [0, 2, 3, 5, 7, 8, 10],
-        "mixolydian": [0, 2, 4, 5, 7, 9, 10],
-        "minor_blues": [0, 3, 5, 6, 7, 10],
-        "locrian": [0, 1, 3, 5, 6, 8, 10],
-        "lydian": [0, 2, 4, 6, 7, 9, 11],
-    }
-
-A4 = 69
-E4 = 64
-G4 = 67
-C4 = 60
-RANGE = 10
-
-
-STRINGS = {i: 0 for i in 'GCEA'}
-for i in STRINGS.keys():
-    # finding the index of first note in the string
-    start = WHOLE_NOTES.index(i)
-    # taking a slice of 20 elements
-    STRINGS[i] = WHOLE_NOTES[start:start + 20]
-
-
+# FUNCTIONS
 def get_scale_notes(key, intervals, whole_notes):
     # finding start of slice
     root = whole_notes.index(key)
@@ -108,11 +76,6 @@ class Wires:
         self.wire_2_note = 0
         self.wire_3_note = 0
         self.wire_4_note = 0
-
-wires = Wires()
-note_status = [Note(i) for i in range(C4, A4 + RANGE)] 
-wire_order = [0,3,1,2]
-thread_stop = False
 
 def list_files_in_folder(folder_path):
     try:
@@ -244,15 +207,7 @@ def play_midi(midi_path, output_text, slider_value):
         exception_info(ex)
     print("THREAD STOPPED!")
 
-folder_path_here = './'
-files_in_folder = list_files_in_folder(folder_path_here)
-midi_list = []
-if files_in_folder:
-    for file in files_in_folder:
-        if ".mid" in file:
-            midi_list.append(file)
-else:
-    print("No files found in the folder.")
+
 
 def play_start():
     midi_song = selected_var.get()
@@ -282,6 +237,54 @@ def stop_thread():
     wires.reset_values()
     turn_off_leds()
 
+# CONSTANTS
+
+WHOLE_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F',
+               'F#', 'G', 'G#', 'A', 'A#', 'B'] * 3
+
+SCALES = \
+    {
+        "major": [0, 2, 4, 5, 7, 9, 11],
+        "minor": [0, 2, 3, 5, 7, 10, 11],
+        "dorian": [0, 2, 3, 5, 7, 9, 10],
+        "phrygian": [0, 1, 3, 5, 7, 8, 10],
+        "minor_pentatonic": [0, 3, 5, 7, 10],
+        "major_pentatonic": [0, 2, 4, 7, 9],
+        "harmonic_minor": [0, 2, 3, 5, 7, 8, 10],
+        "mixolydian": [0, 2, 4, 5, 7, 9, 10],
+        "minor_blues": [0, 3, 5, 6, 7, 10],
+        "locrian": [0, 1, 3, 5, 6, 8, 10],
+        "lydian": [0, 2, 4, 6, 7, 9, 11],
+    }
+
+A4 = 69
+E4 = 64
+G4 = 67
+C4 = 60
+RANGE = 10
+
+STRINGS = {i: 0 for i in 'GCEA'}
+for i in STRINGS.keys():
+    # finding the index of first note in the string
+    start = WHOLE_NOTES.index(i)
+    # taking a slice of 20 elements
+    STRINGS[i] = WHOLE_NOTES[start:start + 20]
+
+# GLOBALS
+
+wires = Wires()
+note_status = [Note(i) for i in range(C4, A4 + RANGE)] 
+wire_order = [0,3,1,2]
+thread_stop = False
+folder_path_here = './'
+files_in_folder = list_files_in_folder(folder_path_here)
+midi_list = []
+if files_in_folder:
+    for file in files_in_folder:
+        if ".mid" in file:
+            midi_list.append(file)
+else:
+    print("No files found in the folder.")
 
 scale = get_scale_notes("C", SCALES["major"], WHOLE_NOTES)
 scale_note_position = find_notes(scale, STRINGS)
