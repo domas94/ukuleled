@@ -237,6 +237,15 @@ def stop_thread():
     wires.reset_values()
     turn_off_leds()
 
+
+def song_info(midi_path):
+
+    mid = MidiFile(midi_path)
+    output_text.delete(1.0, tk.END)  # Clear previous output
+    output_text.insert(tk.END, f"MIDI TYPE: {mid.type}\n")
+    output_text.insert(tk.END, f"MIDI LENGTH: {int(mid.length)}s\n")
+    output_text.insert(tk.END, f"TRACK LENGTH: {len(mid.tracks)}")
+   
 # CONSTANTS
 
 WHOLE_NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F',
@@ -295,13 +304,15 @@ root.title("ukuleLED")
 
 # Create a label and start_button widgets
 label = tk.Label(root, text="UkuleLED player")
-start_button = tk.Button(root, text="START", command=play_start)
+start_button = tk.Button(root, text="START", command = play_start)
 
-stop_button = tk.Button(root, text="STOP", command=stop_thread)
+stop_button = tk.Button(root, text="STOP", command = stop_thread)
 
 # Create a StringVar to store the selected option from the dropdown menu
 selected_var = tk.StringVar(root)
 selected_var.set("Select a song")
+
+song_info_button = tk.Button(root, text="INFO", command = lambda: song_info(selected_var.get()))
 
 # Create a dropdown menu
 dropdown_menu = ttk.Combobox(root, textvariable=selected_var, values=midi_list)
@@ -349,6 +360,7 @@ dropdown_menu.pack()
 slider.pack()
 scale_mode_checkbox.pack()
 start_button.pack(pady=10)
+song_info_button.pack(pady=10)
 stop_button.pack(pady=10)
 # Pack the checkboxes using a loop
 output_text.pack(pady=10)
